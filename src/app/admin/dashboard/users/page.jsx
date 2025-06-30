@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/sidebar/Sidebarr";
 import Link from "next/link";
 
@@ -17,28 +17,6 @@ const SearchIcon = ({ className }) => (
       strokeLinecap="round"
       strokeLinejoin="round"
       d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-    />
-  </svg>
-);
-
-const EyeIcon = ({ className }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-    />
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
     />
   </svg>
 );
@@ -77,68 +55,70 @@ const BellIcon = ({ className }) => (
   </svg>
 );
 
-
-
-const DUMMY_USERS = [
-  {
-    id: "1",
-    name: "Johnathan Smith",
-    propertyAddress: "111 W Main St Gamer, NC 27529",
-    dateAdded: "15/May/2024",
-  },
-  {
-    id: "2",
-    name: "Johnathan Smith",
-    propertyAddress: "111 W Main St Gamer, NC 27529",
-    dateAdded: "15/May/2024",
-  },
-  {
-    id: "3",
-    name: "Johnathan Smith",
-    propertyAddress: "111 W Main St Gamer, NC 27529",
-    dateAdded: "15/May/2024",
-  },
-  {
-    id: "4",
-    name: "Johnathan Smith",
-    propertyAddress: "111 W Main St Gamer, NC 27529",
-    dateAdded: "15/May/2024",
-  },
-  {
-    id: "5",
-    name: "Johnathan Smith",
-    propertyAddress: "111 W Main St Gamer, NC 27529",
-    dateAdded: "15/May/2024",
-  },
-  {
-    id: "6",
-    name: "Johnathan Smith",
-    propertyAddress: "111 W Main St Gamer, NC 27529",
-    dateAdded: "15/May/2024",
-  },
-];
-
 const UserListPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSidebarOpen] = useState(true);
 
-  const handleView = (userId) => {
-    alert(`View user with ID: ${userId}`);
+  // Fetch users from API
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch("/api/users");
+        const data = await response.json();
+        setUsers(data);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  const handleEdit = (userId) => {
+    // Navigate to edit page
+    window.location.href = `/admin/dashboard/users/${userId}/edit`;
   };
 
-  const handleDelete = (userId) => {
-    if (
-      window.confirm(`Are you sure you want to delete user with ID: ${userId}?`)
-    ) {
-      alert(`Delete user with ID: ${userId}`);
+  const handleDelete = async (userId) => {
+    if (window.confirm(`Are you sure you want to delete this user?`)) {
+      try {
+        const response = await fetch(`/api/users/${userId}`, {
+          method: "DELETE",
+        });
+
+        if (response.ok) {
+          setUsers(users.filter((user) => user._id !== userId));
+        } else {
+          const errorData = await response.json();
+          alert(errorData.error || "Failed to delete user");
+        }
+      } catch (error) {
+        console.error("Error deleting user:", error);
+        alert("Failed to delete user");
+      }
     }
   };
 
-  const filteredUsers = DUMMY_USERS.filter(
+  const filteredUsers = users.filter(
     (user) =>
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.propertyAddress.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen overflow-hidden bg-white">
+        <Sidebar isSidebarOpen={isSidebarOpen} />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-white">
@@ -153,7 +133,6 @@ const UserListPage = () => {
               <BellIcon className="h-7 w-7 text-gray-500 hover:text-gray-700" />
               <span className="absolute -top-1 -right-1 bg-red-500 w-3 h-3 rounded-full" />
             </div>
-             {/* User Avatar */}
             <Link href="/admin/dashboard/profilepage">
               <div className="flex items-center space-x-2 cursor-pointer">
                 <img
@@ -180,9 +159,17 @@ const UserListPage = () => {
 
         {/* Main Content */}
         <div className="flex-1 overflow-y-auto p-4">
-          <div className="bg-[#fcfcfc]  p-4">
+          <div className="bg-[#fcfcfc] p-4">
             {/* Search Bar */}
-            <div className="mb-4 flex justify-end">
+            <div className="mb-4 flex justify-between items-center">
+              <button
+                onClick={() =>
+                  (window.location.href = "/admin/dashboard/users/create")
+                }
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Add New User
+              </button>
               <div className="relative w-full max-w-xs">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <SearchIcon className="h-4 w-4 text-gray-400" />
@@ -202,28 +189,16 @@ const UserListPage = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th
-                      scope="col"
-                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Name
                     </th>
-                    <th
-                      scope="col"
-                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Property address
                     </th>
-                    <th
-                      scope="col"
-                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Date added
                     </th>
-                    <th
-                      scope="col"
-                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -231,7 +206,7 @@ const UserListPage = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredUsers.length > 0 ? (
                     filteredUsers.map((user) => (
-                      <tr key={user.id}>
+                      <tr key={user._id}>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                           {user.name}
                         </td>
@@ -244,14 +219,28 @@ const UserListPage = () => {
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
                             <button
-                              onClick={() => handleView(user.id)}
+                              onClick={() => handleEdit(user._id)}
                               className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
-                              title="View"
+                              title="Edit"
                             >
-                              <EyeIcon className="h-4 w-4" />
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 9.5-9.5z"
+                                />
+                              </svg>
                             </button>
+
                             <button
-                              onClick={() => handleDelete(user.id)}
+                              onClick={() => handleDelete(user._id)}
                               className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
                               title="Delete"
                             >
@@ -267,7 +256,9 @@ const UserListPage = () => {
                         colSpan="4"
                         className="px-4 py-4 text-center text-sm text-gray-500"
                       >
-                        No users found.
+                        {users.length === 0
+                          ? "No users found"
+                          : "No matching users found"}
                       </td>
                     </tr>
                   )}

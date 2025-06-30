@@ -1,13 +1,7 @@
 import connectDB from "../../../lib/mongoose";
 import AddProfileUser from "@/models/AddProfile";
 import { NextResponse } from "next/server";
-import { saveFileLocally } from "@/lib/fileUpload";
-
-export const config = {
-  api: {
-    bodyParser: false, // Required for file uploads
-  },
-};
+import { uploadImageToCloudinary } from "@/lib/cloudinary"; // You'll need to implement this
 
 export async function POST(request) {
   try {
@@ -20,7 +14,7 @@ export async function POST(request) {
     const password = formData.get('password');
     const profilePicture = formData.get('profilePicture');
 
-    // Validation
+    // Basic validation
     if (!username || !email || !phoneNo || !password) {
       return NextResponse.json(
         { error: "All fields are required" },
@@ -28,7 +22,7 @@ export async function POST(request) {
       );
     }
 
-    // Check existing user
+    // Check if user already exists
     const existingUser = await AddProfileUser.findOne({ email });
     if (existingUser) {
       return NextResponse.json(
@@ -37,21 +31,21 @@ export async function POST(request) {
       );
     }
 
-    // Handle file upload
-    let imagePath = '';
+    // Handle image upload if exists
+    let imageUrl = '';
     if (profilePicture && profilePicture.size > 0) {
       const arrayBuffer = await profilePicture.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
-      imagePath = await saveFileLocally(buffer, profilePicture.name);
+      imageUrl = await uploadImageToCloudinary(buffer);
     }
 
-    // Create new profile (remember to hash password in production!)
+    // Create new profile
     const newProfile = new AddProfileUser({
       username,
       email,
       phoneNo,
-      password,
-      profilePicture: imagePath || undefined
+      password, // Note: In production, you should hash this!
+      profilePicture: imageUrl
     });
 
     await newProfile.save();
@@ -60,11 +54,10 @@ export async function POST(request) {
       { 
         message: "Profile created successfully",
         profile: {
-          id: newProfile._id,
           username,
           email,
           phoneNo,
-          profilePicture: imagePath
+          profilePicture: imageUrl
         }
       },
       { status: 201 }
@@ -73,11 +66,13 @@ export async function POST(request) {
   } catch (error) {
     console.error("Error creating profile:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to create profile" },
+      { error: "Failed to create profile" },
       { status: 500 }
     );
   }
 }
+
+
 
 
 // import connectDB from "../../../lib/mongoose";

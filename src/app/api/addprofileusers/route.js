@@ -1,7 +1,6 @@
 import connectDB from "../../../lib/mongoose";
 import AddProfileUser from "@/models/AddProfile";
 import { NextResponse } from "next/server";
-import { uploadImageToCloudinary } from "@/lib/cloudinary"; // You'll need to implement this
 
 export async function POST(request) {
   try {

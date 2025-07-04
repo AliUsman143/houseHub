@@ -2,6 +2,7 @@ import connectDB from "../../../lib/mongoose";
 import AddProfileUser from "@/models/AddProfile";
 import { NextResponse } from "next/server";
 
+
 export async function POST(request) {
   try {
     await connectDB();
@@ -13,7 +14,6 @@ export async function POST(request) {
     const password = formData.get('password');
     const profilePicture = formData.get('profilePicture');
 
-    // Basic validation
     if (!username || !email || !phoneNo || !password) {
       return NextResponse.json(
         { error: "All fields are required" },
@@ -21,7 +21,6 @@ export async function POST(request) {
       );
     }
 
-    // Check if user already exists
     const existingUser = await AddProfileUser.findOne({ email });
     if (existingUser) {
       return NextResponse.json(
@@ -30,20 +29,20 @@ export async function POST(request) {
       );
     }
 
-    // Handle image upload if exists
     let imageUrl = '';
     if (profilePicture && profilePicture.size > 0) {
       const arrayBuffer = await profilePicture.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
-      imageUrl = await uploadImageToCloudinary(buffer);
+      // Implement your file upload logic here
+      // imageUrl = await uploadImageToCloudinary(buffer);
+      imageUrl = `data:${profilePicture.type};base64,${buffer.toString('base64')}`;
     }
 
-    // Create new profile
     const newProfile = new AddProfileUser({
       username,
       email,
       phoneNo,
-      password, // Note: In production, you should hash this!
+      password,
       profilePicture: imageUrl
     });
 
@@ -71,30 +70,28 @@ export async function POST(request) {
   }
 }
 
-
-
-
-// import connectDB from "../../../lib/mongoose";
-// import AddProfileUser from "@/models/AddProfile";
-// import { NextResponse } from "next/server";
-
-// export async function POST(request) {
-//   try {
-//     await connectDB();
-//     const { username, email, phoneNo } = await request.json();
-
-//     // Validate input
-//     if (!username || !email || !phoneNo) {
-//       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
-//     }
-
-//     // Create new user profile
-//     const newUser = new AddProfileUser({ username, email, phoneNo });
-//     await newUser.save();
-
-//     return NextResponse.json({ message: "Profile created successfully" }, { status: 201 });
-//   } catch (error) {
-//     console.error("Error creating profile:", error);
-//     return NextResponse.json({ error: "Failed to create profile" }, { status: 500 });
-//   }
-// }
+export async function GET() {
+  try {
+    await connectDB();
+    const profiles = await AddProfileUser.find().sort({ createdAt: -1 });
+    
+    return NextResponse.json(
+      { 
+        profiles: profiles.map(profile => ({
+          id: profile._id.toString(),
+          username: profile.username,
+          email: profile.email,
+          phoneNo: profile.phoneNo,
+          profilePicture: profile.profilePicture || "https://placehold.co/40x40/cccccc/ffffff?text=U"
+        }))
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error fetching profiles:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch profiles" },
+      { status: 500 }
+    );
+  }
+}

@@ -1,7 +1,9 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState, useRef } from "react"; // ✅ include useEffect here
+
 import Sidebar from "../../components/sidebar/Sidebarr";
 import Link from "next/link";
+import ProfileDropdown from "../../components/ProfileDropdown";
 
 // SVG Icons
 const SearchIcon = ({ className }) => (
@@ -59,7 +61,26 @@ const UserListPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const sidebarRef = useRef(null);
+
+  // Close sidebar when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        isSidebarOpen &&
+        sidebarRef.current &&
+        !sidebarRef.current.contains(event.target)
+      ) {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isSidebarOpen]);
 
   // Fetch users from API
   useEffect(() => {
@@ -111,9 +132,18 @@ const UserListPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen overflow-hidden bg-white">
-        <Sidebar isSidebarOpen={isSidebarOpen} />
-        <div className="flex-1 flex items-center justify-center">
+      <div className="flex min-h-screen bg-white">
+        <div ref={sidebarRef}>
+          <Sidebar
+            isSidebarOpen={isSidebarOpen}
+            toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          />
+        </div>
+        <div
+          className={`flex-1 flex items-center justify-center transition-all duration-300 ${
+            isSidebarOpen ? "lg:ml-64" : "lg:ml-0"
+          }`}
+        >
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
       </div>
@@ -121,56 +151,79 @@ const UserListPage = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white">
-      <Sidebar isSidebarOpen={isSidebarOpen} />
+    <div className="flex min-h-screen bg-white">
+      {/* Sidebar */}
+      <div ref={sidebarRef}>
+        <Sidebar
+          isSidebarOpen={isSidebarOpen}
+          toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        />
+      </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Main Content Area */}
+      <main
+        className={`flex-1 overflow-y-auto transition-all duration-300 ${
+          isSidebarOpen ? "lg:ml-64" : "lg:ml-0"
+        }`}
+      >
         {/* Top Bar */}
-        <div className="flex justify-between items-center p-7 mb-8">
-          <h1 className="text-3xl font-semibold text-gray-900">All Users</h1>
-          <div className="flex items-center space-x-6">
-            <div className="relative cursor-pointer">
-              <BellIcon className="h-7 w-7 text-gray-500 hover:text-gray-700" />
-              <span className="absolute -top-1 -right-1 bg-red-500 w-3 h-3 rounded-full" />
-            </div>
-            <Link href="/admin/dashboard/profilepage">
-              <div className="flex items-center space-x-2 cursor-pointer">
-                <img
-                  src="https://placehold.co/40x40/cccccc/ffffff?text=U"
-                  alt="User Avatar"
-                  className="w-10 h-10 rounded-full border-2 border-gray-300"
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-6 border-b border-gray-200">
+          <div className="flex items-center mb-4 sm:mb-0">
+            {/* Mobile Sidebar Toggle Button */}
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="lg:hidden mr-4 p-2 rounded-md bg-[#002f86] text-white"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
                 />
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-gray-500"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-            </Link>
+              </svg>
+            </button>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900">
+              All Users
+            </h1>
+          </div>
+
+          <div className="flex items-center space-x-4 sm:space-x-6 w-full sm:w-auto">
+            <div className="relative cursor-pointer">
+              <BellIcon className="h-5 w-5 sm:h-7 sm:w-7 text-gray-500 hover:text-gray-700" />
+              <span className="absolute -top-1 -right-1 bg-red-500 w-2 h-2 sm:w-3 sm:h-3 rounded-full" />
+            </div>
+            {/* Profile Dropdown */}
+            <ProfileDropdown
+              currentProfile={{
+                profilePicture:
+                  "https://placehold.co/40x40/cccccc/ffffff?text=U",
+                username: "Admin",
+              }}
+            />
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="bg-[#fcfcfc] p-4">
-            {/* Search Bar */}
-            <div className="mb-4 flex justify-between items-center">
+        <div className="p-4 sm:p-6">
+          <div className="bg-[#fcfcfc] p-4 sm:p-6 rounded-lg">
+            {/* Search and Add User */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
               <button
                 onClick={() =>
                   (window.location.href = "/admin/dashboard/users/create")
                 }
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors w-full sm:w-auto text-center"
               >
                 Add New User
               </button>
-              <div className="relative w-full max-w-xs">
+              <div className="relative w-full sm:w-64">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <SearchIcon className="h-4 w-4 text-gray-400" />
                 </div>
@@ -189,16 +242,16 @@ const UserListPage = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Name
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Property address
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Date added
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -207,16 +260,16 @@ const UserListPage = () => {
                   {filteredUsers.length > 0 ? (
                     filteredUsers.map((user) => (
                       <tr key={user._id}>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">
                           {user.name}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">
                           {user.propertyAddress}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900">
                           {user.dateAdded}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                        <td className="px-3 py-3 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
                             <button
                               onClick={() => handleEdit(user._id)}
@@ -267,7 +320,7 @@ const UserListPage = () => {
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

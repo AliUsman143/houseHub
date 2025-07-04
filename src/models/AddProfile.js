@@ -1,35 +1,11 @@
 import mongoose from 'mongoose';
 
-const addprofileuserSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    lowercase: true
-  },
-  phoneNo: {
-    type: String,
-    required: true
-  },
-  password: {
-    type: String,
-    required: true
-  },
-  profilePicture: {
-    type: String,
-    default: ''
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
+const AddProfileSchema = new mongoose.Schema({
+  username: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  phoneNo: { type: String, required: true },
+  password: { type: String, required: true },
+  profilePicture: { type: String },
 }, { timestamps: true });
 
-const AddProfileUser = mongoose.models.AddProfileUser || mongoose.model('AddProfileUser', addprofileuserSchema);
-
-export default AddProfileUser;
+export default mongoose.models.AddProfileUser || mongoose.model('AddProfileUser', AddProfileSchema);

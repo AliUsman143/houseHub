@@ -1,7 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Sidebar from "../../components/sidebar/Sidebarr";
 import Link from "next/link";
+import ProfileDropdown from "../../components/ProfileDropdown";
 
 const BellIcon = ({ className }) => (
   <svg
@@ -20,18 +21,26 @@ const BellIcon = ({ className }) => (
   </svg>
 );
 
-
-
 const CreatePackagesPage = () => {
   const [basicTagline, setBasicTagline] = useState("");
   const [basicPrice, setBasicPrice] = useState("");
   const [basicPropertyCount, setBasicPropertyCount] = useState("");
-  const [isSidebarOpen] = useState(true);
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const sidebarRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isSidebarOpen && sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+        setIsSidebarOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isSidebarOpen]);
 
   const handleSave = () => {
-    alert(
-      `Save clicked!\nTagline: ${basicTagline}\nPrice: ${basicPrice}\nProperties: ${basicPropertyCount}`
-    );
+    alert(`Save clicked!\nTagline: ${basicTagline}\nPrice: ${basicPrice}\nProperties: ${basicPropertyCount}`);
   };
 
   const handleCancel = () => {
@@ -43,89 +52,95 @@ const CreatePackagesPage = () => {
 
   return (
     <div className="flex min-h-screen bg-white">
-      {/* Sidebar Left */}
-      <Sidebar isSidebarOpen={isSidebarOpen} />
+      {/* Sidebar */}
+      <div ref={sidebarRef}>
+        <Sidebar
+          isSidebarOpen={isSidebarOpen}
+          toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        />
+      </div>
 
-      {/* Right Content */}
-      <div className="flex-1 px-6 py-8">
+      {/* Main content */}
+      <main
+        className={`flex-1 px-4 sm:px-6 py-6 md:py-8 transition-all duration-300 ${
+          isSidebarOpen ? "lg:ml-64" : "lg:ml-0"
+        }`}
+      >
         {/* Top Bar */}
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Packages</h1>
-          <div className="flex items-center space-x-6">
+        <div className="flex justify-between items-center mb-6 md:mb-10">
+          {/* Mobile toggle button */}
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="lg:hidden mr-4 p-2 rounded-md bg-[#002f86] text-white"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Packages</h1>
+
+          <div className="flex items-center space-x-4 md:space-x-6">
             <div className="relative cursor-pointer">
-              <BellIcon className="h-7 w-7 text-gray-500 hover:text-gray-700" />
+              <BellIcon className="h-6 w-6 md:h-7 md:w-7 text-gray-500 hover:text-gray-700" />
               <span className="absolute -top-1 -right-1 bg-red-500 w-3 h-3 rounded-full" />
             </div>
-             {/* User Avatar */}
-            <Link href="/admin/dashboard/profilepage">
-              <div className="flex items-center space-x-2 cursor-pointer">
-                <img
-                  src="https://placehold.co/40x40/cccccc/ffffff?text=U"
-                  alt="User Avatar"
-                  className="w-10 h-10 rounded-full border-2 border-gray-300"
-                />
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-gray-500"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-            </Link>
+            <ProfileDropdown currentProfile={{
+              profilePicture: "https://placehold.co/40x40/cccccc/ffffff?text=U",
+              username: "Admin"
+            }} />
           </div>
         </div>
 
         {/* Page Heading */}
         <div className="bg-white text-center rounded-lg border border-gray-200 p-6">
           <div className="mb-6">
-            <h2 className="text-5xl font-bold mb-2 text-[#002f86]">Create Packages</h2>
-            <p className="text-gray-500 text-sm">
-              Set the prices as per your requirement
-            </p>
+            <h2 className="text-3xl md:text-5xl font-bold mb-2 text-[#002f86]">Create Packages</h2>
+            <p className="text-gray-500 text-sm">Set the prices as per your requirement</p>
           </div>
 
-          {/* 3-Column Grid for Package Tiers */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Grid Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {["Basic", "Standard", "Premium"].map((label, index) => (
               <div key={index} className="border border-gray-200 rounded-2xl">
-                <div className="bg-[#f57c00] border rounded-2xl text-white text-center py-3 font-bold">
+                <div className="bg-[#f57c00] text-white text-center py-3 font-bold rounded-t-2xl">
                   {label}
                 </div>
                 <div className="p-4 space-y-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Tagline
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tagline</label>
                     <input
                       type="text"
+                      value={basicTagline}
+                      onChange={(e) => setBasicTagline(e.target.value)}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Price
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-2 text-gray-500 text-sm">
-                        $
-                      </span>
+                      <span className="absolute left-3 top-2 text-gray-500 text-sm">$</span>
                       <input
                         type="number"
+                        value={basicPrice}
+                        onChange={(e) => setBasicPrice(e.target.value)}
                         className="pl-7 w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Property Count
-                    </label>
-                    <select className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Property Count</label>
+                    <select
+                      value={basicPropertyCount}
+                      onChange={(e) => setBasicPropertyCount(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                    >
                       <option value="">Select count</option>
                       <option value="5">Up to 5</option>
                       <option value="20">Up to 20</option>
@@ -138,23 +153,23 @@ const CreatePackagesPage = () => {
             ))}
           </div>
 
-          {/* Action Buttons */}
+          {/* Buttons */}
           <div className="flex justify-end gap-3 mt-6">
             <button
               onClick={handleCancel}
-              className="bg-gray-200 text-gray-800 px-10 font-bold py-2 text-sm rounded hover:bg-gray-300"
+              className="bg-gray-200 text-gray-800 px-8 font-bold py-2 text-sm rounded hover:bg-gray-300"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              className="bg-[#f57c00] text-white px-10 font-bold py-2 text-sm rounded hover:bg-[#003c99]"
+              className="bg-[#f57c00] text-white px-8 font-bold py-2 text-sm rounded hover:bg-[#003c99]"
             >
               Save
             </button>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
